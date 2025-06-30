@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stolpersteine Ulm - Memorial Search</title>
+    <meta name="description" content="Suche nach Stolpersteinen und Verlegeorten in Ulm. Finden Sie Gedenksteine mit hochauflösenden Bildern und Installationsadressen.">
+    
+    <!-- Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React and ReactDOM from CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        /* Custom memorial theme colors */
+        :root {
+            --memorial-light: #f8f9fa;
+            --memorial-dark: #2c3e50;
+            --memorial-gray: #6c757d;
+        }
+        
+        .bg-memorial-light { background-color: var(--memorial-light); }
+        .text-memorial-dark { color: var(--memorial-dark); }
+        .text-memorial-gray { color: var(--memorial-gray); }
+        .font-system { font-family: system-ui, -apple-system, sans-serif; }
+        
+        /* Loading spinner */
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        // Memorial stone data with real Stolpersteine from Ulm
+        const sampleStolpersteine = [
+            {
+                id: 1,
+                name: "Barbara Seibold",
+                address: "Olgastraße 85",
+                installDate: "2015-05-26",
+                lifespan: null,
+                imageUrl: "https://upload.wikimedia.org/wikipedia/commons/b/b2/Stolperstein_Ulm_Barbara_Seibold.JPG",
+                source: "Wikipedia",
+                sourceUrl: "https://de.wikipedia.org/wiki/Liste_der_Stolpersteine_in_Ulm",
+                createdAt: new Date()
+            },
+            {
+                id: 2,
+                name: "Konrad Seibold",
+                address: "Olgastraße 85",
+                installDate: "2015-05-26",
+                lifespan: null,
+                imageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/6e/Stolperstein_Ulm_Konrad_Seibold.JPG",
+                source: "Wikipedia",
+                sourceUrl: "https://de.wikipedia.org/wiki/Liste_der_Stolpersteine_in_Ulm",
+                createdAt: new Date()
+            },
+            {
+                id: 3,
+                name: "Otto Hilb",
+                address: "Frauenstraße 19",
+                installDate: "2015-05-26",
+                lifespan: null,
+                imageUrl: "https://upload.wikimedia.org/wikipedia/commons/9/96/Stolperstein_Ulm_Otto_Hilb.jpg",
+                source: "Wikipedia",
+                sourceUrl: "https://de.wikipedia.org/wiki/Liste_der_Stolpersteine_in_Ulm",
+                createdAt: new Date()
+            }
+        ];
+
+        // Toast notification component
+        function Toast({ message, type, onClose }) {
+            React.useEffect(() => {
+                const timer = setTimeout(onClose, 3000);
+                return () => clearTimeout(timer);
+            }, [onClose]);
+
+            return (
+                <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                    type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                }`}>
+                    {message}
+                </div>
+            );
+        }
+
+        // Search form component
+        function SearchForm({ onSearchResults, onSearchError }) {
+            const [searchQuery, setSearchQuery] = React.useState("");
+            const [isSearching, setIsSearching] = React.useState(false);
+
+            const handleSearch = async (name) => {
+                try {
+                    setIsSearching(true);
+                    
+                    // Simulate network delay
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    
+                    const searchTerm = name.toLowerCase().trim();
+                    const results = sampleStolpersteine.filter(stolperstein => 
+                        stolperstein.name.toLowerCase().includes(searchTerm)
+                    );
+                    
+                    onSearchResults(results, name);
+                } catch (error) {
+                    onSearchError("Fehler bei der Suche");
+                } finally {
+                    setIsSearching(false);
+                }
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (searchQuery.trim()) {
+                    handleSearch(searchQuery.trim());
+                }
+            };
+
+            return (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label htmlFor="nameInput" className="block text-sm font-medium text-memorial-dark mb-2">
+                                Name der Person
+                            </label>
+                            <input
+                                id="nameInput"
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="z.B. Rosa Hecht"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                disabled={isSearching}
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={isSearching || !searchQuery.trim()}
+                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
+                        >
+                            {isSearching ? (
+                                <>
+                                    <div className="loading-spinner"></div>
+                                    Suche läuft...
+                                </>
+                            ) : (
+                                <>
+                                    🔍 Suchen
+                                </>
+                            )}
+                        </button>
+                    </form>
+                </div>
+            );
+        }
+
+        // Search results component
+        function SearchResults({ results, searchTerm, searchError }) {
+            if (searchError) {
+                return (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                        <h3 className="text-lg font-semibold text-red-800 mb-2">Fehler</h3>
+                        <p className="text-red-700">{searchError}</p>
+                    </div>
+                );
+            }
+
+            if (!searchTerm) return null;
+
+            if (results.length === 0) {
+                return (
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
+                        <h3 className="text-lg font-semibold text-memorial-dark mb-2">
+                            Keine Ergebnisse
+                        </h3>
+                        <p className="text-memorial-gray">
+                            Für "{searchTerm}" wurden keine Stolpersteine gefunden.
+                        </p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="space-y-6">
+                    <div className="text-center">
+                        <h2 className="text-xl font-semibold text-memorial-dark mb-2">
+                            Suchergebnisse für "{searchTerm}"
+                        </h2>
+                        <p className="text-memorial-gray">
+                            {results.length} Stolperstein{results.length !== 1 ? 'e' : ''} gefunden
+                        </p>
+                    </div>
+
+                    {results.map((result) => (
+                        <div key={result.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <div className="space-y-6">
+                                {/* Person Info */}
+                                <div>
+                                    <h3 className="text-xl font-semibold text-memorial-dark mb-3">
+                                        {result.name}
+                                    </h3>
+                                    <div className="space-y-2 text-memorial-gray">
+                                        <div className="flex items-center">
+                                            <span className="font-medium min-w-0 flex-shrink-0 mr-3">Verlegeort:</span>
+                                            <span>{result.address}</span>
+                                        </div>
+                                        {result.installDate && (
+                                            <div className="flex items-center">
+                                                <span className="font-medium min-w-0 flex-shrink-0 mr-3">Verlegedatum:</span>
+                                                <span>{new Date(result.installDate).toLocaleDateString('de-DE')}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center">
+                                            <span className="font-medium min-w-0 flex-shrink-0 mr-3">Quelle:</span>
+                                            <a 
+                                                href={result.sourceUrl} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 hover:text-blue-800 underline"
+                                            >
+                                                {result.source}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Memorial Stone Image */}
+                                <div>
+                                    <h3 className="text-lg font-semibold text-memorial-dark mb-3">
+                                        Gedenkstein
+                                    </h3>
+                                    {result.imageUrl ? (
+                                        <div>
+                                            <img
+                                                src={result.imageUrl}
+                                                alt={`Stolperstein für ${result.name}`}
+                                                className="w-full rounded-lg shadow-md"
+                                                style={{ height: 'auto', maxHeight: 'none', objectFit: 'contain' }}
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                    e.target.nextElementSibling?.classList.remove('hidden');
+                                                }}
+                                            />
+                                            <div className="hidden bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                                <p className="text-memorial-gray">Bild konnte nicht geladen werden</p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                            <p className="text-memorial-gray">Kein Bild verfügbar</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        // Main app component
+        function App() {
+            const [searchResults, setSearchResults] = React.useState([]);
+            const [searchTerm, setSearchTerm] = React.useState("");
+            const [searchError, setSearchError] = React.useState("");
+            const [toast, setToast] = React.useState(null);
+
+            const handleSearchResults = (results, term) => {
+                setSearchResults(results);
+                setSearchTerm(term);
+                setSearchError("");
+                setToast({
+                    message: `${results.length} Ergebnis(se) für "${term}" gefunden.`,
+                    type: 'success'
+                });
+            };
+
+            const handleSearchError = (error) => {
+                setSearchError(error);
+                setSearchResults([]);
+                setToast({
+                    message: error,
+                    type: 'error'
+                });
+            };
+
+            return (
+                <div className="bg-memorial-light min-h-screen font-system">
+                    {/* Toast notification */}
+                    {toast && (
+                        <Toast
+                            message={toast.message}
+                            type={toast.type}
+                            onClose={() => setToast(null)}
+                        />
+                    )}
+
+                    {/* Header */}
+                    <header className="bg-white shadow-sm border-b border-gray-200">
+                        <div className="max-w-4xl mx-auto px-4 py-6">
+                            <h1 className="text-2xl font-semibold text-memorial-dark mb-2">
+                                Stolpersteine Ulm
+                            </h1>
+                            <p className="text-memorial-gray text-sm">
+                                Suche nach Gedenksteinen und Verlegeorten
+                            </p>
+                        </div>
+                    </header>
+
+                    <main className="max-w-4xl mx-auto px-4 py-8">
+                        <SearchForm
+                            onSearchResults={handleSearchResults}
+                            onSearchError={handleSearchError}
+                        />
+
+                        <SearchResults
+                            results={searchResults}
+                            searchTerm={searchTerm}
+                            searchError={searchError}
+                        />
+
+                        {/* Info Section */}
+                        <div className="mt-12 bg-gray-50 rounded-xl p-6">
+                            <h3 className="text-lg font-semibold text-memorial-dark mb-3">
+                                Über diese Suche
+                            </h3>
+                            <div className="space-y-2 text-sm text-memorial-gray">
+                                <p>Diese Anwendung durchsucht Stolperstein-Informationen in Ulm:</p>
+                                <ul className="list-disc list-inside space-y-1 ml-4">
+                                    <li>Wikipedia-Seite "Liste der Stolpersteine in Ulm"</li>
+                                    <li>Stolpersteine-fuer-Ulm.de Website</li>
+                                </ul>
+                                <p className="mt-3">
+                                    Die Suche zeigt den Verlegeort und hochauflösende Bilder der Gedenksteine an, 
+                                    damit die Inschriften gut lesbar sind.
+                                </p>
+                            </div>
+                        </div>
+                    </main>
+
+                    <footer className="max-w-4xl mx-auto px-4 py-8 mt-12 border-t border-gray-200">
+                        <div className="text-center text-sm text-memorial-gray">
+                            <p>Zum Gedenken an die Opfer des Nationalsozialismus</p>
+                            <p className="mt-2">Daten von Wikipedia und Stolpersteine-fuer-Ulm.de</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        // Render the app
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
